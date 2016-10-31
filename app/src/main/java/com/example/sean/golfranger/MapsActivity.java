@@ -1,15 +1,16 @@
 package com.example.sean.golfranger;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.util.Log;
-
+import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -25,14 +26,54 @@ import static com.example.sean.golfranger.R.id.map;
 public class MapsActivity extends FragmentActivity
         implements OnMapReadyCallback {
 
+    private static final int LOCATION_REQUEST_CODE = 101;
+    private boolean permissionIsGranted = false;
     private GoogleMap mMap = null;
     Location location;
     LatLng cord;
-    Marker markers[];
     Marker markerN, markerNE, markerE, markerSE, markerS,
             markerSW, markerW, markerNW, golferMarker, marker;
     CameraPosition cameraPosition = null;
     Location golferLocation, markerLocationN, markerLocationNE, markerLocationE, markerLocationSE, markerLocationS, markerLocationSW, markerLocationW, markerLocationNW, markerLocation;
+
+
+    /**
+     * In order to update to API 23, we need to execute runtime permissions check
+     * We do this be executing the onRequestPermissionsResults, the body of requestLocationUpdates,
+     * and onResume/onPause declarations
+     */
+
+    private void requestLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
+            } else {
+                permissionIsGranted = true;
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case LOCATION_REQUEST_CODE:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    permissionIsGranted = true;
+                } else {
+                    permissionIsGranted = false;
+                    Toast.makeText(getApplicationContext(), "Range Distance Requires " +
+                            "Location Permissions", Toast.LENGTH_SHORT).show();
+                }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +84,19 @@ public class MapsActivity extends FragmentActivity
                 .findFragmentById(map);
         mapFragment.getMapAsync(this);
 
+    }
+
+    @Override
+    protected void onResume() {
+        if (!permissionIsGranted) {
+            requestLocationUpdates();
+        }
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     /**
@@ -264,32 +318,6 @@ public class MapsActivity extends FragmentActivity
 
             }
         });
-
-//            @Override
-//            public void onCameraIdle() {
-//                CameraPosition cameraPosition = mMap.getCameraPosition();
-//                marker.setPosition(cameraPosition.target);
-//
-//                try {
-//                    location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
-//                } catch (SecurityException e) {
-//                    e.printStackTrace();
-//                }
-//
-//                golferLocation = new Location("golferLocation");
-//                golferLocation.setLatitude(location.getLatitude());
-//                golferLocation.setLongitude(location.getLongitude());
-//
-//                markerLocation = new Location("markerLocation");
-//                markerLocation.setLatitude(marker.getPosition().latitude);
-//                markerLocation.setLongitude(marker.getPosition().longitude);
-//
-//                String distance = String.valueOf(Math.round(golferLocation.distanceTo(markerLocation) * 1.09361));
-//
-//                marker.setTitle(distance);
-//                marker.showInfoWindow();
-//            }
-//        });
     }
 
     /**
