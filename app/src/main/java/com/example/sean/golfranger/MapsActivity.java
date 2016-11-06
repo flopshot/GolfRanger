@@ -151,23 +151,36 @@ public class MapsActivity extends FragmentActivity
         if (location != null) {
             cameraPosition = new CameraPosition.Builder()
                     .target(cord)      // Sets the center of the map to location user
-                    .zoom(16.3f)                   // Sets the zoom
+                    .zoom(17.3f)                   // Sets the zoom
                     .build();                   // Creates a CameraPosition from the builder
 
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
 
+
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(LatLng point) {
+                mMap.clear();
+
+                //PUT MARKER AT SPOT OF CLICK
+                marker = mMap.addMarker(new MarkerOptions()
+                        .position(point)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                );
+            }
+        });
+
         //TODO: SAVE MAP STATE ON SCREEN ROTATE
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng point) {
-                if (marker == null && golferMarker == null) {
-                    //PUT MARKER AT SPOT OF CLICK
-                    marker = mMap.addMarker(new MarkerOptions()
-                            .position(point)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                    );
-
+                if (golferMarker != null & marker != null) {
+                    golferMarker.remove();
+                } else if (golferMarker == null & marker != null) {
+                    /**
+                     GET USER LOCATION
+                     */
                     try {
                         location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
                         cord = new LatLng(location.getLatitude(), location.getLongitude());
@@ -175,15 +188,20 @@ public class MapsActivity extends FragmentActivity
                         e.printStackTrace();
                     }
 
-                    //MOVE CAMERA TO USER LOCATION
-                    cameraPosition = new CameraPosition.Builder()
-                            .target(cord)      // Sets the center of the map to location user
-                            .zoom(20)          // Sets the zoom
-                            .build();          // Creates a CameraPosition from the builder
+                    /**
+                     POSITION MAP CAMERA AT USER LOCATION
+                     */
+                    if (location != null) {
+                        cameraPosition = new CameraPosition.Builder()
+                                .target(cord)      // Sets the center of the map to location user
+                                .zoom(19.3f)                   // Sets the zoom
+                                .build();                   // Creates a CameraPosition from the builder
 
-                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                    }
+                }
 
-                } else if (golferMarker == null) {
+                if (marker != null) {
                     //Create Markers
                     golferMarker = mMap.addMarker(new MarkerOptions()
                             .position(point)
@@ -215,30 +233,7 @@ public class MapsActivity extends FragmentActivity
 
                     new ElevationTask().execute(cords);
 
-                } else {
-                    mMap.clear();
-
-                    //Get Coordinates of Golfer location Again
-                    try {
-                        location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
-                        cord = new LatLng(location.getLatitude(), location.getLongitude());
-                    } catch (SecurityException e) {
-                        e.printStackTrace();
-                    }
-
-                    //MOVE CAMERA TO Golfer LOCATION
-                    cameraPosition = new CameraPosition.Builder()
-                            .target(cord)      // Sets the center of the map to location user
-                            .zoom(16.3f)          // Sets the zoom
-                            .build();          // Creates a CameraPosition from the builder
-
-                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
-                    //reset marker variables to null for switch
-                    marker = null;
-                    golferMarker = null;
                 }
-
             }
         });
     }
